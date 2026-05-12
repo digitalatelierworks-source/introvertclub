@@ -7,24 +7,24 @@ navToggle?.addEventListener('click', () => {
 
 const instagramPosts = [
   {
-    title: '週末のカフェスタイル',
+    title: 'オフ会の入口で',
     handle: '@introvertclub_jp',
-    caption: '落ち着いた色合いで、話しかけやすい背面メッセージ。'
+    caption: '最初の一言がむずかしい日に。背中の言葉が、会話のきっかけになります。'
   },
   {
-    title: 'ライブ前のリラックス',
-    handle: '@ic_official',
-    caption: 'ボルドーアクセントのフーディーで自然体に。'
+    title: 'バーでひとり飲み',
+    handle: '@introvertclub_jp',
+    caption: '話しかけてもらえたら嬉しい。そんな気持ちを、さりげなく伝える一枚。'
   },
   {
-    title: 'オフ会のコーディネート',
-    handle: '@shy_street',
-    caption: '静かに目を引く、言葉のチョイスがポイント。'
+    title: 'サークルの飲み会',
+    handle: '@introvertclub_jp',
+    caption: '輪に入るタイミングが迷子でも、服が少しだけ助けてくれる。'
   },
   {
-    title: '夕方の散歩',
-    handle: '@quiet_mood',
-    caption: 'シンプルなキャップがアクセントに。'
+    title: 'ライブ一人参戦',
+    handle: '@introvertclub_jp',
+    caption: '同じ好きを持つ人と、少しだけ話すきっかけに。'
   },
 ];
 
