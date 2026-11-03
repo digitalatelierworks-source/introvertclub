@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check SUZURI API token and existing product (GET only)
+      - name: Verify SUZURI account and material (GET only)
         env:
           SUZURI_API_TOKEN: ${{ secrets.SUZURI_API_TOKEN }}
         run: |
@@ -19,25 +19,37 @@ jobs:
           import json, os, sys, urllib.request, urllib.error
           token = os.environ.get("SUZURI_API_TOKEN")
           if not token:
-              sys.exit("Missing SUZURI_API_TOKEN secret. Add it under repository Settings > Secrets and variables > Actions.")
-          url = "https://suzuri.jp/api/v1/products/19942047"
-          req = urllib.request.Request(url, headers={
-              "Authorization": f"Bearer {token}",
-              "Accept": "application/json",
-          }, method="GET")
-          try:
-              with urllib.request.urlopen(req, timeout=25) as resp:
-                  result = json.load(resp)
-          except urllib.error.HTTPError as err:
-              sys.exit(f"Read-only SUZURI API request failed: HTTP {err.code}")
-          except Exception as err:
-              sys.exit(f"Connection failed: {type(err).__name__}")
-          product = result.get("product", {})
-          item = product.get("item", {})
+              sys.exit("Missing SUZURI_API_TOKEN repository secret.")
+          def get(path):
+              req = urllib.request.Request(
+                  "https://suzuri.jp/api/v1" + path,
+                  headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+                  method="GET",
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=25) as resp:
+                      return json.load(resp)
+              except urllib.error.HTTPError as exc:
+                  sys.exit(f"GET {path.split('?')[0]} failed with HTTP {exc.code}")
+              except Exception as exc:
+                  sys.exit(f"Connection failure: {type(exc).__name__}")
+          user = get("/user").get("user", {})
+          if user.get("name") != "introvert-club":
+              sys.exit("SUZURI API key belongs to a different account; stopped without changes.")
           print("SUZURI API authentication: OK")
-          print("Source product ID:", product.get("id"))
-          print("Item ID:", item.get("id"))
-          print("Available print places:", item.get("availablePrintPlaces"))
-          print("Multi-print:", item.get("isMultiPrintable"))
-          print("Read-only check completed. No changes were made.")
+          print("Account: introvert-club")
+          data = get("/products?materialId=19942047&itemId=1&userName=introvert-club")
+          products = data.get("products", [])
+          if not products:
+              sys.exit("API connected, but no standard T-shirt found under material ID 19942047.")
+          found = [p for p in products if p.get("material", {}).get("id") == 19942047 and p.get("item", {}).get("id") == 1]
+          if not found:
+              sys.exit("API connected, but the returned T-shirt could not be verified against the material ID.")
+          product = found[0]
+          print("Source material ID: 19942047")
+          print("Actual product ID:", product["id"])
+          print("Item ID:", product["item"]["id"])
+          print("Available print places:", product["item"].get("availablePrintPlaces", []))
+          print("Multi-print:", product["item"].get("isMultiPrintable", False))
+          print("Read-only test completed. No products were changed.")
           PY
