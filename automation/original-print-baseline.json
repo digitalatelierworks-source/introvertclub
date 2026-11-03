@@ -1,0 +1,52 @@
+{
+  "source": "GitHub Actions run 41630478787, job 125898460360, 2026-11-03",
+  "shop": "introvert-club",
+  "itemId": 1,
+  "sourceProductId": 85286875,
+  "sourceMaterialId": 19942047,
+  "sourceMarginYen": 200,
+  "printRecords": [
+    {
+      "index": 0,
+      "scale": 0.8829,
+      "offsetX": 0.2309,
+      "offsetY": 0,
+      "imageWidth": 1536,
+      "imageHeight": 1024,
+      "side": "unverified",
+      "note": "Dimensions match assets/images/logo.png; likely original front logo, side not logged."
+    },
+    {
+      "index": 1,
+      "scale": 1.8759,
+      "offsetX": 0,
+      "offsetY": 0,
+      "imageWidth": 887,
+      "imageHeight": 1595,
+      "side": "unverified"
+    }
+  ],
+  "localAssets": {
+    "front": "assets/images/logo.png",
+    "frontDimensions": [
+      1536,
+      1024
+    ],
+    "back": "introvertclub_friends_back_transparent.png",
+    "backDimensions": [
+      1706,
+      2048
+    ]
+  },
+  "constraints": {
+    "doNotAlterOriginal": true,
+    "createOnlyPrivate": true,
+    "exactPlacementNotYetVerified": true,
+    "createApiHasNoDocumentedScaleOrOffsetParameters": true
+  },
+  "notes": [
+    "Do not assume the numerical print parameters can be supplied to POST /materials.",
+    "Official placement_preview GET is read-only and does not save placement.",
+    "Before creating a new product, verify which print record is front and match placement in SUZURI preview/editor."
+  ]
+}
