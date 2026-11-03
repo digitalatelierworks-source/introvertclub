@@ -94,8 +94,23 @@ def main():
     if not args.create:
         print("Dry-run only. No SUZURI changes made.")
         return
-    raise SystemExit("Creation blocked: SUZURI POST /materials does not document scale/offset settings. Existing left-chest logo placement cannot yet be reproduced reliably. Verify and implement placement workflow first; no products created.")
-    # No write request is permitted until placement reproduction is implemented and verified.
+    # This is an intentional PRIVATE trial. Existing product is never updated.
+    # API does not support copying the original scale/offset at creation.
+    existing = api("/materials?limit=50", token).get("materials", [])
+    if any(m.get("title") == args.title for m in existing):
+        raise SystemExit("Trial title already exists among recent materials. Refusing duplicate creation.")
+    result = api("/materials", token, method="POST", payload=payload)
+    created = result.get("material", {})
+    new_id = created.get("id")
+    if not new_id or new_id == SOURCE_MATERIAL_ID:
+        raise SystemExit("Unexpected creation response. Inspect SUZURI dashboard; do not retry blindly.")
+    print("NEW MATERIAL ID:", new_id)
+    print("NEW PRODUCT IDs:", [p.get("id") for p in result.get("products", [])])
+    print("Creation response publication flags:", {
+        "material": created.get("published"),
+        "products": [p.get("published") for p in result.get("products", [])],
+    })
+    print("Review print placement in SUZURI before publishing.")
     print("Private material created. ID:", result.get("material", {}).get("id", "see SUZURI dashboard"))
     print("Check print position, product price and publication status in SUZURI.")
 
