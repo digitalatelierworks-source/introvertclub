@@ -1,0 +1,40 @@
+name: SUZURI inspect private trial (read only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check created material and product via GET only
+        env:
+          SUZURI_API_TOKEN: ${{ secrets.SUZURI_API_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request, urllib.error
+          root="https://suzuri.jp/api/v1"
+          token=os.environ["SUZURI_API_TOKEN"]
+          def get(path):
+              req=urllib.request.Request(root+path,headers={"Authorization":"Bearer "+token,"Accept":"application/json"})
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r: return json.load(r)
+              except urllib.error.HTTPError as e:
+                  print("GET",path.split("?")[0],"HTTP",e.code)
+                  return None
+          user=get("/user")
+          if not user or user.get("user",{}).get("name")!="introvert-club":
+              raise SystemExit("Wrong shop or API access")
+          for path in ("/materials/21294671","/products/92242570","/products?materialId=21294671&itemId=1&userName=introvert-club"):
+              data=get(path)
+              if data is None: continue
+              objects=[]
+              if "material" in data: objects=[("material",data["material"])]
+              if "product" in data: objects=[("product",data["product"])]
+              if "products" in data: objects=[("product",p) for p in data["products"]]
+              print("GET",path.split("?")[0],"objects",len(objects))
+              for kind,o in objects:
+                  print(json.dumps({"kind":kind,"id":o.get("id"),"title":o.get("title"),"published":o.get("published"),"materialId":o.get("materialId") or (o.get("material") or {}).get("id"),"itemId":o.get("itemId") or (o.get("item") or {}).get("id"),"printCount":len(o.get("prints") or []),"url":o.get("url"),"sampleUrl":o.get("sampleUrl")},ensure_ascii=False))
+          print("Read-only inspection complete; no SUZURI changes.")
+          PY
