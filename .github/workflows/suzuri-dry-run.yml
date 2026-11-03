@@ -1,0 +1,36 @@
+name: SUZURI T-shirt dry run (no changes)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Validate artwork files and Python syntax
+        run: |
+          python3 -m py_compile automation/suzuri_create.py
+          python3 - <<'PY'
+          import pathlib
+          for filename in ("assets/images/logo.png", "introvertclub_friends_back_transparent.png"):
+              p = pathlib.Path(filename)
+              if not p.is_file():
+                  raise SystemExit(f"Missing artwork: {filename}")
+              if p.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+                  raise SystemExit(f"Invalid PNG: {filename}")
+              print(f"PNG present: {filename} ({p.stat().st_size} bytes)")
+          PY
+      - name: Dry-run source product verification (GET only)
+        env:
+          SUZURI_API_TOKEN: ${{ secrets.SUZURI_API_TOKEN }}
+        run: |
+          python3 automation/suzuri_create.py \
+            --front assets/images/logo.png \
+            --back introvertclub_friends_back_transparent.png \
+            --title "友達募集中です | Introvert Club"
