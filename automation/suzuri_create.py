@@ -1,86 +1,102 @@
 #!/usr/bin/env python3
-"""Introvert Club SUZURI draft creator. Read-only by default; never updates originals."""
-import argparse, base64, json, os, pathlib, urllib.request, urllib.error
+"""Prepare/create a private Introvert Club SUZURI T-shirt. Dry-run by default."""
+import argparse
+import base64
+import json
+import os
+from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 API = "https://suzuri.jp/api/v1"
-SOURCE_PRODUCT_ID = 19942047
+SOURCE_MATERIAL_ID = 19942047
+SHOP_NAME = "introvert-club"
+ITEM_ID = 1
 
-def request(path, token, method="GET", payload=None):
+def api(path, token, method="GET", payload=None):
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
     data = None
     if payload is not None:
         headers["Content-Type"] = "application/json"
-        data = json.dumps(payload, ensure_ascii=False).encode()
-    req = urllib.request.Request(API + path, data=data, headers=headers, method=method)
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     try:
-        with urllib.request.urlopen(req, timeout=40) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as exc:
-        # Never print token or potentially sensitive response bodies.
-        raise RuntimeError(f"SUZURI API returned HTTP {exc.code} for {method} {path}") from None
+        with urlopen(Request(API + path, headers=headers, data=data, method=method), timeout=40) as r:
+            return json.load(r)
+    except HTTPError as err:
+        raise RuntimeError(f"SUZURI {method} {path.split('?')[0]}: HTTP {err.code}") from None
 
-def data_uri(path):
-    p = pathlib.Path(path)
+def png_uri(path):
+    p = Path(path)
     if not p.is_file() or p.suffix.lower() != ".png":
-        raise ValueError(f"PNG file required: {p}")
+        raise ValueError(f"PNG file not found: {p}")
+    sig = p.read_bytes()[:8]
+    if sig != b"\x89PNG\r\n\x1a\n":
+        raise ValueError(f"Invalid PNG: {p}")
     return "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode("ascii")
 
 def main():
-    parser = argparse.ArgumentParser(description="Create a private SUZURI T-shirt from two PNG files")
-    parser.add_argument("--front", required=True, help="Existing brand logo PNG")
-    parser.add_argument("--back", required=True, help="Transparent back-design PNG")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--front", required=True, help="Brand logo PNG")
+    parser.add_argument("--back", required=True, help="Transparent message PNG")
     parser.add_argument("--title", default="友達募集中です | Introvert Club")
-    parser.add_argument("--create", action="store_true", help="Actually create a private product")
+    parser.add_argument("--create", action="store_true", help="Create a PRIVATE new product (write operation)")
     args = parser.parse_args()
-    token = os.environ.get("SUZURI_API_TOKEN")
+
+    token = os.getenv("SUZURI_API_TOKEN")
     if not token:
-        raise SystemExit("Set SUZURI_API_TOKEN in your environment (never commit it).")
-    source = request(f"/products/{SOURCE_PRODUCT_ID}", token)
-    product = source.get("product", source)
-    item = product.get("item", {})
-    material = product.get("material", {})
-    if item.get("name") != "t-shirt" or not item.get("isMultiPrintable"):
-        raise SystemExit("Source is not a supported multi-print T-shirt; stopped.")
-    if not {"front", "back"}.issubset(set(item.get("availablePrintPlaces", []))):
-        raise SystemExit("Source does not support front and back; stopped.")
-    # Item 1 is the standard T-shirt in SUZURI's API documentation.
-    item_id = item["id"]
-    if item_id != 1:
-        raise SystemExit(f"Unexpected item ID {item_id}; stopped for review.")
+        raise SystemExit("SUZURI_API_TOKEN is missing. Never paste it into source code.")
+
+    user = api("/user", token).get("user", {})
+    if user.get("name") != SHOP_NAME:
+        raise SystemExit("The API key is not for introvert-club. Nothing created.")
+
+    products = api(f"/products?materialId={SOURCE_MATERIAL_ID}&itemId={ITEM_ID}&userName={SHOP_NAME}", token).get("products", [])
+    matches = [p for p in products if p.get("material", {}).get("id") == SOURCE_MATERIAL_ID and p.get("item", {}).get("id") == ITEM_ID]
+    if len(matches) != 1:
+        raise SystemExit(f"Expected one matching source product, got {len(matches)}. Nothing created.")
+    product = matches[0]
+    item = product["item"]
+    if not item.get("isMultiPrintable") or not {"front", "back"}.issubset(item.get("availablePrintPlaces", [])):
+        raise SystemExit("Source T-shirt does not support front and back printing.")
+
+    margin = product.get("material", {}).get("price")
+    if type(margin) is not int or margin < 0:
+        raise SystemExit("Cannot verify the existing product's margin. Nothing created.")
+
+    # First texture is the primary material; the sub-material prints on the back.
     payload = {
-        "texture": data_uri(args.front),
+        "texture": png_uri(args.front),
         "title": args.title,
         "description": "Introvert Club | 言えないことを、背中で言う。",
-        "price": int(material.get("price") or 0),
+        "price": margin,
         "products": [{
-            "itemId": item_id,
+            "itemId": ITEM_ID,
             "published": False,
             "resizeMode": "contain",
             "sub_materials": [{
-                "texture": data_uri(args.back),
+                "texture": png_uri(args.back),
                 "printSide": "back",
-                "enabled": True
-            }]
-        }]
+                "enabled": True,
+            }],
+        }],
     }
     print(json.dumps({
-        "source_product_id": SOURCE_PRODUCT_ID,
-        "source_item_id": item_id,
+        "action": "CREATE_PRIVATE" if args.create else "DRY_RUN",
+        "source_material_id": SOURCE_MATERIAL_ID,
+        "source_product_id": product["id"],
         "title": args.title,
-        "price_margin_yen": payload["price"],
-        "front_png": args.front,
-        "back_png": args.back,
+        "margin_yen": margin,
         "published": False,
-        "action": "CREATE_PRIVATE" if args.create else "DRY_RUN_NO_CHANGES",
-        "warning": "Print size and placement require visual review; logo left-chest placement is not guaranteed."
+        "front_file": args.front,
+        "back_file": args.back,
+        "warning": "Left-chest placement and print size are not verified. Inspect SUZURI preview before publishing.",
     }, ensure_ascii=False, indent=2))
     if not args.create:
-        print("No product was created. Pass --create only after reviewing the summary.")
+        print("Dry-run only. No SUZURI changes made.")
         return
-    result = request("/materials", token, method="POST", payload=payload)
-    new_material = result.get("material", {})
-    print("Created private material ID:", new_material.get("id", "check SUZURI dashboard"))
-    print("Review front/back placement and publication state in SUZURI before publishing.")
+    result = api("/materials", token, method="POST", payload=payload)
+    print("Private material created. ID:", result.get("material", {}).get("id", "see SUZURI dashboard"))
+    print("Check print position, product price and publication status in SUZURI.")
 
 if __name__ == "__main__":
     main()
