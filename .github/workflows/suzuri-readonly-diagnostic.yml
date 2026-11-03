@@ -1,0 +1,74 @@
+name: SUZURI read-only registration diagnostic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check material and product visibility (GET only)
+        env:
+          SUZURI_API_TOKEN: ${{ secrets.SUZURI_API_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SUZURI_API_TOKEN:-}" ]]; then
+            echo "::error::SUZURI_API_TOKEN secret is missing"
+            exit 1
+          fi
+          echo "::add-mask::$SUZURI_API_TOKEN"
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error
+          base = "https://suzuri.jp/api/v1"
+          token = os.environ["SUZURI_API_TOKEN"]
+          checks = [
+              ("existing_material", "/materials/19942047"),
+              ("existing_product", "/products/85286875"),
+              ("trial_material", "/materials/21294671"),
+              ("trial_product", "/products/92242570"),
+              ("product_list", "/products"),
+          ]
+          for label, path in checks:
+              req = urllib.request.Request(base + path, headers={
+                  "Authorization": "Bearer " + token,
+                  "Accept": "application/json",
+              }, method="GET")
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as response:
+                      status = response.status
+                      body = response.read(1024 * 1024)
+              except urllib.error.HTTPError as exc:
+                  status = exc.code
+                  body = exc.read(1024 * 1024)
+              except Exception as exc:
+                  print(f"{label}: transport_error={type(exc).__name__}")
+                  continue
+              print(f"{label}: HTTP {status}")
+              try:
+                  data = json.loads(body)
+              except (ValueError, UnicodeDecodeError):
+                  print("  response: non-JSON (body withheld)")
+                  continue
+              if not isinstance(data, dict):
+                  print(f"  JSON type: {type(data).__name__}")
+                  continue
+              print("  top-level keys:", ", ".join(sorted(data.keys())[:30]))
+              for key in ("material", "product"):
+                  obj = data.get(key)
+                  if isinstance(obj, dict):
+                      for field in ("id", "materialId", "published", "isPublished", "createdAt", "updatedAt"):
+                          if field in obj and isinstance(obj[field], (str, int, float, bool, type(None))):
+                              print(f"  {key}.{field}={obj[field]}")
+              for key in ("products", "items"):
+                  items = data.get(key)
+                  if isinstance(items, list):
+                      print(f"  {key}.count={len(items)}")
+                      print(f"  contains_trial_product={any(isinstance(x, dict) and str(x.get('id')) == '92242570' for x in items)}")
+              if status >= 400:
+                  print("  error body withheld to avoid leaking account data")
+          PY
