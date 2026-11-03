@@ -1,0 +1,27 @@
+name: SUZURI create one private trial
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: suzuri-private-trial
+  cancel-in-progress: false
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create one unpublished trial T-shirt (new material only)
+        env:
+          SUZURI_API_TOKEN: ${{ secrets.SUZURI_API_TOKEN }}
+        run: |
+          python3 automation/suzuri_create.py \
+            --front assets/images/logo.png \
+            --back introvertclub_friends_back_transparent.png \
+            --title "友達募集中です | Introvert Club [非公開試作 2026-11-03]" \
+            --create
