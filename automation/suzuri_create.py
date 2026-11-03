@@ -94,7 +94,8 @@ def main():
     if not args.create:
         print("Dry-run only. No SUZURI changes made.")
         return
-    result = api("/materials", token, method="POST", payload=payload)
+    raise SystemExit("Creation blocked: SUZURI POST /materials does not document scale/offset settings. Existing left-chest logo placement cannot yet be reproduced reliably. Verify and implement placement workflow first; no products created.")
+    # No write request is permitted until placement reproduction is implemented and verified.
     print("Private material created. ID:", result.get("material", {}).get("id", "see SUZURI dashboard"))
     print("Check print position, product price and publication status in SUZURI.")
 
