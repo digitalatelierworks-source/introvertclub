@@ -32,6 +32,8 @@ jobs:
               ("trial_material", "/materials/21294671"),
               ("trial_product", "/products/92242570"),
               ("product_list", "/products"),
+              ("existing_material_products", "/products?materialId=19942047&limit=50"),
+              ("trial_material_products", "/products?materialId=21294671&limit=50"),
           ]
           for label, path in checks:
               req = urllib.request.Request(base + path, headers={
@@ -68,6 +70,9 @@ jobs:
                   items = data.get(key)
                   if isinstance(items, list):
                       print(f"  {key}.count={len(items)}")
+                      if key == "products" and label.endswith("_material_products"):
+                          print("  returned_product_ids:", [x.get("id") for x in items if isinstance(x, dict)])
+                          print("  has_next:", data.get("meta", {}).get("hasNext") if isinstance(data.get("meta"), dict) else "unknown")
                       print(f"  contains_trial_product={any(isinstance(x, dict) and str(x.get('id')) == '92242570' for x in items)}")
               if status >= 400:
                   print("  error body withheld to avoid leaking account data")
