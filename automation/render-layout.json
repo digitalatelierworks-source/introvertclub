@@ -1,0 +1,16 @@
+{
+  "verified": true,
+  "reference": "introvertclub_batch_v2_2.zip: batch_generate.py and five supplied output PNGs; not Canva/print approval",
+  "width": 1706,
+  "height": 2048,
+  "font_size": 140,
+  "character_gap": 70,
+  "column_pitch": 278,
+  "text_top": 403,
+  "center_x": 853,
+  "margin": 100,
+  "max_chars": 7,
+  "arrow_points": [[853, 197], [831, 232], [875, 232]],
+  "arrow_line": [[853, 328], [853, 212]],
+  "arrow_line_width": 10
+}

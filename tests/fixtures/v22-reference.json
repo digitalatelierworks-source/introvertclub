@@ -1,0 +1,51 @@
+{
+  "source_archive_sha256": "ce237c4105c9c4c9442172ff4e96ac912fca8318e5de85ea874478f1cd88fc4f",
+  "source": "introvertclub_batch_v2_2.zip / output/*.png",
+  "images": {
+    "IC-0001": {
+      "alpha_sha256": "dfec486201abf9cad980ab9bf7223dfd0bb871628f2755f228062461949b1b0a",
+      "bbox": [
+        786,
+        197,
+        923,
+        1790
+      ]
+    },
+    "IC-0002": {
+      "alpha_sha256": "9262212eeb81c39c5be38dfcb21049649656b9afb0b0f83834d5a81d14136c92",
+      "bbox": [
+        647,
+        197,
+        1062,
+        1790
+      ]
+    },
+    "IC-0003": {
+      "alpha_sha256": "84bdaa2bd736860001e969870b831de1509dad412d447eb42138a88179813f78",
+      "bbox": [
+        507,
+        197,
+        1196,
+        1161
+      ]
+    },
+    "IC-0004": {
+      "alpha_sha256": "4a14fd232edbc957ea5b41eda6a5c7aa526b25c362a671c1c59077bde8d171e1",
+      "bbox": [
+        369,
+        197,
+        1335,
+        1161
+      ]
+    },
+    "IC-0006": {
+      "alpha_sha256": "00141f08bc67139fdb69e0b7a3dccbca4425a77016d1653132228b60a988f4fc",
+      "bbox": [
+        651,
+        197,
+        1062,
+        1773
+      ]
+    }
+  }
+}

@@ -1,0 +1,3 @@
+# Preserve the exact upstream font and license bytes checked by manifest.json.
+assets/fonts/*.ttf -text
+assets/fonts/OFL.txt -text

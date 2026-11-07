@@ -1,0 +1,8 @@
+{
+  "source": "User-provided introvertclub_batch_v2_2.zip / Zen_Maru_Gothic.zip",
+  "upstream": "https://github.com/googlefonts/zen-marugothic",
+  "sha256": {
+    "ZenMaruGothic-Bold.ttf": "d726be217b3039398300c0e1c5991119e78e54af56b0b53423769479493128a7",
+    "OFL.txt": "1182fbae232eca2daa916aabd6a9820b116f4a1e32d4008982095ffcb5bc300c"
+  }
+}
